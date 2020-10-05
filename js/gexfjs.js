@@ -15,7 +15,6 @@
  * */
 
 (function() {
-
     var GexfJS = {
         lensRadius: 200,
         lensGamma: 0.5,
@@ -254,17 +253,33 @@
         return (_l[_str] ? _l[_str] : (GexfJS.i18n["en"][_str] ? GexfJS.i18n["en"][_str] : _str.replace("_", " ")));
     }
 
-    function replaceURLWithHyperlinks(text) {
+    function isURL(text) {
+	var _urlExp = /(\b(?:https?:\/\/)[-A-Z0-9]+\.[-A-Z0-9.:]+(?:\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*)?)/ig;
+	return _urlExp.test(text);
+    }
+    
+    function replaceURLWithHyperlinks(text, linktext) {
         if (GexfJS.params.replaceUrls) {
-            var _urlExp = /(\b(?:https?:\/\/)?[-A-Z0-9]+\.[-A-Z0-9.:]+(?:\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*)?)/ig,
+            var _urlExp = /(\b(?:https?:\/\/)[-A-Z0-9]+\.[-A-Z0-9.:]+(?:\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*)?)/ig,
                 _protocolExp = /^https?:\/\//i,
                 _res = text.split(_urlExp);
             return _res.map(function (_txt) {
                 if (_txt.match(_urlExp)) {
+		    _target = "_blank";
+		    if (linktext == null) {
+			linktext = _txt.replace(_protocolExp, '');
+		    } else {
+			if (linktext == "egourl") {
+			    linktext = "Go to this word's ego graph";
+			    _target = "_self";
+			} else if (linktext == "search url" || linktext == "korp url") {
+			    linktext = "Search in Korp";
+			}
+		    }
                     return $('<a>').attr({
                         href: (_protocolExp.test(_txt) ? '' : 'http://') + _txt,
-                        target: "_blank"
-                    }).text(_txt.replace(_protocolExp, ''));
+                        target: _target
+                    }).text(linktext);
                 } else {
                     return $('<span>').text(_txt);
                 }
@@ -304,13 +319,23 @@
                 var attr = _d.a[i];
                 var _li = $("<li>");
                 var attrkey = GexfJS.graph.attributes[attr[0]];
-                $("<b>").text(strLang(attrkey) + ": ").appendTo(_li);
-                if (attrkey === 'image') {
-                    $('<br>').appendTo(_li);
-                    $('<img>').attr("src", attr[1]).appendTo(_li).addClass("attrimg");
-                } else {
-                    _li.append(replaceURLWithHyperlinks(attr[1]));
-                }
+		if (attrkey != 'image' && strLang(attrkey) != 'freqrank' && GexfJS.params.replaceUrls && isURL(attr[1])) {
+		    _b = $("<b>")
+		    _b.append(replaceURLWithHyperlinks(attr[1], strLang(attrkey)));
+		    _b.appendTo(_li);
+		} else {
+		    var attrib_name = strLang(attrkey);
+		    if (attrib_name == 'freqrank') {
+			attrib_name = "Frequency rank";
+		    }
+                    $("<b>").text(attrib_name + ": ").appendTo(_li);
+                    if (attrkey === 'image') {
+			$('<br>').appendTo(_li);
+			$('<img>').attr("src", attr[1]).appendTo(_li).addClass("attrimg");
+                    } else {
+			_li.append(replaceURLWithHyperlinks(attr[1]));
+                    }
+		}
                 _li.appendTo(_ul);
             }
             var _str_in = [],
@@ -662,7 +687,7 @@
                 if (isJson) {
                     GexfJS.graph = data;
                     GexfJS.graph.indexOfLabels = GexfJS.graph.nodeList.map(function (_d) {
-                        return _d.l.toLowerCase();
+                        return normalizeText.normalizeText(_d.l);
                     });
 
                 } else {
@@ -730,7 +755,7 @@
                         }
                         GexfJS.graph.nodeList.push(_d);
                         nodeIndexById.push(_d.id);
-                        GexfJS.graph.indexOfLabels.push(_d.l.toLowerCase());
+                        GexfJS.graph.indexOfLabels.push(normalizeText.normalizeText(_d.l));
                     });
 
                     $(_edges).each(function () {
@@ -1081,7 +1106,7 @@
     function hoverAC() {
         $("#autocomplete li").removeClass("hover");
         $("#liac_" + GexfJS.autoCompletePosition).addClass("hover");
-        GexfJS.params.activeNode = GexfJS.graph.indexOfLabels.indexOf($("#liac_" + GexfJS.autoCompletePosition).text().toLowerCase());
+        GexfJS.params.activeNode = GexfJS.graph.indexOfLabels.indexOf(normalizeText.normalizeText($("#liac_" + GexfJS.autoCompletePosition).text()));
     }
 
     function changePosAC(_n) {
@@ -1090,7 +1115,7 @@
     }
 
     function updateAutoComplete(_sender) {
-        var _val = $(_sender).val().toLowerCase();
+        var _val = normalizeText.normalizeText($(_sender).val());
         var _ac = $("#autocomplete");
         var _acContent = $('<ul>');
         if (_val != GexfJS.lastAC || _ac.html() == "") {
@@ -1214,7 +1239,7 @@
             });
         $("#recherche").submit(function () {
             if (GexfJS.graph) {
-                displayNode(GexfJS.graph.indexOfLabels.indexOf($("#searchinput").val().toLowerCase()), true);
+                displayNode(GexfJS.graph.indexOfLabels.indexOf(normalizeText.normalizeText($("#searchinput").val())), true);
             }
             return false;
         });
