@@ -689,7 +689,15 @@
                     GexfJS.graph.indexOfLabels = GexfJS.graph.nodeList.map(function (_d) {
                         return normalizeText.normalizeText(_d.l);
                     });
-
+		    var translation_attr_index = GexfJS.graph.attributes.indexOf("translation");
+		    if (translation_attr_index > 0) {
+			console.log("Found translation attribute");
+			GexfJS.graph.indexOfTranslations = [];
+			GexfJS.graph.nodeList.forEach(function (_n) {
+			    _n.translation = _n["a"][translation_attr_index];
+			    GexfJS.graph.indexOfTranslations.push(normalizeText.normalizeText(_n.translation));
+			});
+		    }
                 } else {
                     var _g = $(data).find("graph"),
                         _nodes = _g.children().filter("nodes").children(),
@@ -756,6 +764,7 @@
                         GexfJS.graph.nodeList.push(_d);
                         nodeIndexById.push(_d.id);
                         GexfJS.graph.indexOfLabels.push(normalizeText.normalizeText(_d.l));
+			// GexfJS.graph.indexOfTranslations.push(normalizeText.normalizeText(_d.translation));
                     });
 
                     $(_edges).each(function () {
@@ -1109,20 +1118,32 @@
         GexfJS.params.activeNode = GexfJS.graph.indexOfLabels.indexOf(normalizeText.normalizeText($("#liac_" + GexfJS.autoCompletePosition).text()));
     }
 
+    function hoverTransAC() {
+        $("#autocomplete li").removeClass("hover");
+        $("#liac_" + GexfJS.autoCompletePosition).addClass("hover");
+        GexfJS.params.activeNode = GexfJS.graph.indexOfTranslations.indexOf(normalizeText.normalizeText($("#liac_" + GexfJS.autoCompletePosition).text()));
+    }
+
     function changePosAC(_n) {
         GexfJS.autoCompletePosition = _n;
         hoverAC();
+    }
+
+    function changePosTransAC(_n) {
+        GexfJS.autoCompletePosition = _n;
+        hoverTransAC();
     }
 
     function updateAutoComplete(_sender) {
         var _val = normalizeText.normalizeText($(_sender).val());
         var _ac = $("#autocomplete");
         var _acContent = $('<ul>');
+        var _acTranslationContent = $('<ul>');
         if (_val != GexfJS.lastAC || _ac.html() == "") {
             GexfJS.lastAC = _val;
             var _n = 0;
             GexfJS.graph.indexOfLabels.forEach(function (_l, i) {
-                if (_n < 30 && _l.search(_val) != -1) {
+                if (_n < 20 && _l.search(_val) != -1) {
                     var closure_n = _n;
                     $('<li>')
                         .attr("id", "liac_" + _n)
@@ -1140,14 +1161,37 @@
                     _n++;
                 }
             });
+            GexfJS.graph.indexOfTranslations.forEach(function (_l, i) {
+                if (_n < 20 && _l.search(_val) != -1) {
+                    var closure_n = _n;
+                    $('<li>')
+                        .attr("id", "liac_" + _n)
+                        .append($('<a>')
+                            .mouseover(function () {
+                                changePosTransAC(closure_n);
+                            })
+                            .click(function () {
+                                displayNode(i, true);
+                                return false;
+                            })
+                            .text(GexfJS.graph.nodeList[i].l)
+                        )
+                        .appendTo(_acTranslationContent);
+                    _n++;
+                }
+            });
             GexfJS.autoCompletePosition = 0;
             _ac.html(
                 $('<div>').append(
                     $('<h4>').text(strLang("nodes"))
                 ).append(_acContent)
             );
+	    _ac.append($('<div>').append(
+                $('<h4>').text("Translations")
+            ).append(_acTranslationContent));
         }
         hoverAC();
+        hoverTransAC();
         _ac.show();
     }
 
