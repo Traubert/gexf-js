@@ -341,62 +341,100 @@
             var _str_in = [],
                 _str_out = [],
                 _str_undir = [];
+
+	    var node_weight_id = []
+
             GexfJS.graph.edgeList.forEach(function (_e) {
                 if (_e.t == _nodeIndex) {
                     var _n = GexfJS.graph.nodeList[_e.s];
-                    var _li = $("<li>");
-                    $("<div>").addClass("smallpill").css("background", _n.B).appendTo(_li);
-                    $("<a>")
-                        .text(_n.l)
-                        .attr("href", "#")
-                        .mouseover(function () {
-                            GexfJS.params.activeNode = _e.s;
-                        })
-                        .click(function () {
-                            displayNode(_e.s, true);
-                            return false;
-                        })
-                        .appendTo(_li);
-                    if (GexfJS.params.showEdgeLabel) {
-                        $('<span>').text(" – " + _e.l).appendTo(_li);
-                    }
-                    if (GexfJS.params.showEdgeWeight) {
-                        $('<span>').text(" (" + _e.w + ")").appendTo(_li);
-                    }
-                    if (_e.d) {
-                        _str_in.push(_li);
-                    } else {
-                        _str_undir.push(_li);
-                    }
+	    	    node_weight_id.push([_n, parseFloat(_e.w), _e.s]);
                 }
                 if (_e.s == _nodeIndex) {
                     var _n = GexfJS.graph.nodeList[_e.t];
-                    var _li = $("<li>");
-                    $("<div>").addClass("smallpill").css("background", _n.B).appendTo(_li);
-                    $("<a>")
-                        .text(_n.l)
-                        .attr("href", "#")
-                        .mouseover(function () {
-                            GexfJS.params.activeNode = _e.t;
-                        })
-                        .click(function () {
-                            displayNode(_e.t, true);
-                            return false;
-                        })
-                        .appendTo(_li);
-                    if (GexfJS.params.showEdgeLabel) {
-                        $('<span>').text(" – " + _e.l).appendTo(_li);
-                    }
-                    if (GexfJS.params.showEdgeWeight) {
-                        $('<span>').text(" (" + _e.w + ")").appendTo(_li);
-                    }
-                    if (_e.d) {
-                        _str_out.push(_li);
-                    } else {
-                        _str_undir.push(_li);
-                    }
+	    	    node_weight_id.push([_n, parseFloat(_e.w), _e.t]);
+	    	}})
+
+	    node_weight_id.sort(function(a, b) {return b[1] - a[1]});
+
+            node_weight_id.forEach(function (n_w) {
+                var _li = $("<li>");
+                $("<div>").addClass("smallpill").css("background", n_w[0].B).appendTo(_li);
+                $("<a>")
+                    .text(n_w[0].l)
+                    .attr("href", "#")
+                    .mouseover(function () {
+                        GexfJS.params.activeNode = n_w[2];
+                    })
+                    .click(function () {
+                        displayNode(n_w[2], true);
+                        return false;
+                    })
+                    .appendTo(_li);
+                if (GexfJS.params.showEdgeWeight) {
+                    $('<span>').text(" (" + n_w[1] + ")").appendTo(_li);
                 }
+                _str_undir.push(_li);
             });
+
+	    
+		    
+            // GexfJS.graph.edgeList.forEach(function (_e) {
+            //     if (_e.t == _nodeIndex) {
+            //         var _n = GexfJS.graph.nodeList[_e.s];
+            //         var _li = $("<li>");
+            //         $("<div>").addClass("smallpill").css("background", _n.B).appendTo(_li);
+            //         $("<a>")
+            //             .text(_n.l)
+            //             .attr("href", "#")
+            //             .mouseover(function () {
+            //                 GexfJS.params.activeNode = _e.s;
+            //             })
+            //             .click(function () {
+            //                 displayNode(_e.s, true);
+            //                 return false;
+            //             })
+            //             .appendTo(_li);
+            //         if (GexfJS.params.showEdgeLabel) {
+            //             $('<span>').text(" – " + _e.l).appendTo(_li);
+            //         }
+            //         if (GexfJS.params.showEdgeWeight) {
+            //             $('<span>').text(" (" + _e.w + ")").appendTo(_li);
+            //         }
+            //         if (_e.d) {
+            //             _str_in.push(_li);
+            //         } else {
+            //             _str_undir.push(_li);
+            //         }
+            //     }
+            //     if (_e.s == _nodeIndex) {
+            //         var _n = GexfJS.graph.nodeList[_e.t];
+            //         var _li = $("<li>");
+            //         $("<div>").addClass("smallpill").css("background", _n.B).appendTo(_li);
+            //         $("<a>")
+            //             .text(_n.l)
+            //             .attr("href", "#")
+            //             .mouseover(function () {
+            //                 GexfJS.params.activeNode = _e.t;
+            //             })
+            //             .click(function () {
+            //                 displayNode(_e.t, true);
+            //                 return false;
+            //             })
+            //             .appendTo(_li);
+            //         if (GexfJS.params.showEdgeLabel) {
+            //             $('<span>').text(" – " + _e.l).appendTo(_li);
+            //         }
+            //         if (GexfJS.params.showEdgeWeight) {
+            //             $('<span>').text(" (" + _e.w + ")").appendTo(_li);
+            //         }
+            //         if (_e.d) {
+            //             _str_out.push(_li);
+            //         } else {
+            //             _str_undir.push(_li);
+            //         }
+            //     }
+            // });
+
             if (_str_in.length) {
                 $('<h4>').text(strLang("inLinks")).appendTo(_html);
                 $('<ul>').html(_str_in).appendTo(_html);
@@ -668,6 +706,7 @@
         GexfJS.timeRefresh = setInterval(traceMap, 60);
         GexfJS.graph = null;
         loadGraph();
+
     }
 
     function loadGraph() {
@@ -676,7 +715,6 @@
         var isJson = (function (t) { return t[t.length - 1]; })(url.split('.')) === 'json';
 
         console.log("Loading " + url + " in " + (isJson ? "json" : "gexf") + " mode");
-        measureTime("Loading graph from network");
 
         $.ajax({
             url: url,
@@ -697,6 +735,19 @@
 			    _n.translation = _n["a"][translation_attr_index];
 			    GexfJS.graph.indexOfTranslations.push(normalizeText.normalizeText(_n.translation));
 			});
+		    }
+		    var egourl_attr_index = GexfJS.graph.attributes.indexOf("egourl");
+		    if (egourl_attr_index >= 0) {
+			console.log("Found egourl attribute");
+			for (let i = 0; i < GexfJS.graph.nodeList.length; ++i) {
+			    if (GexfJS.graph.nodeList[i]["a"].length <= egourl_attr_index || GexfJS.graph.nodeList[i]["a"][egourl_attr_index][0] != egourl_attr_index || GexfJS.graph.nodeList[i]["a"][egourl_attr_index][1] == "") {
+				console.log("Found egourl root");
+				GexfJS.graph.root_node = i;
+				//GexfJS.params.activeNode = i;
+				//GexfJS.params.currentNode = i;
+				break;
+			    }
+			}
 		    }
                 } else {
                     var _g = $(data).find("graph"),
@@ -823,9 +874,14 @@
                 });
 
                 GexfJS.imageMini = GexfJS.ctxMini.getImageData(0, 0, GexfJS.overviewWidth, GexfJS.overviewHeight);
-                
+
+		if ("root_node" in GexfJS.graph) {
+		    console.log("displaying root node " + GexfJS.graph.root_node);
+		    displayNode(GexfJS.graph.root_node, true);
+		}
             }
         });
+	GexfJS.params.zoomLevel = 0;
     }
 
     function getNodeFromPos(_coords) {
@@ -974,6 +1030,7 @@
 
         var _centralNode = ((GexfJS.params.activeNode != -1) ? GexfJS.params.activeNode : GexfJS.params.currentNode);
 
+	var min_node_radius = 1000.0;
         for (var i in GexfJS.graph.nodeList) {
             var _d = GexfJS.graph.nodeList[i];
             _d.actual_coords = {
@@ -982,9 +1039,11 @@
                 r: _nodeSizeFactor * _d.r
             };
             _d.withinFrame = ((_d.actual_coords.x + _d.actual_coords.r > 0) && (_d.actual_coords.x - _d.actual_coords.r < GexfJS.graphZone.width) && (_d.actual_coords.y + _d.actual_coords.r > 0) && (_d.actual_coords.y - _d.actual_coords.r < GexfJS.graphZone.height));
+	    if (_d.withinFrame) {
+		min_node_radius = Math.min(min_node_radius, _d.actual_coords.r);
+	    }
             _d.visible = (GexfJS.params.currentNode == -1 || i == _centralNode || GexfJS.params.showEdges);
         }
-
         var _tagsMisEnValeur = [];
 
         if (_centralNode != -1) {
@@ -1018,10 +1077,12 @@
                 }
 
                 if ((_isLinked || _showAllEdges) && (_ds.withinFrame || _dt.withinFrame) && _ds.visible && _dt.visible) {
-                    GexfJS.ctxGraphe.lineWidth = _edgeSizeFactor * _d.W;
+                    GexfJS.ctxGraphe.lineWidth = Math.min(min_node_radius*.8, _edgeSizeFactor * _d.W);
                     var _coords = ((GexfJS.params.useLens && GexfJS.mousePosition) ? calcCoord(GexfJS.mousePosition.x, GexfJS.mousePosition.y, _ds.actual_coords) : _ds.actual_coords);
                     _coordt = ((GexfJS.params.useLens && GexfJS.mousePosition) ? calcCoord(GexfJS.mousePosition.x, GexfJS.mousePosition.y, _dt.actual_coords) : _dt.actual_coords);
+		    var _dist = Math.sqrt(Math.pow(_coords.x - _coordt.x, 2) + Math.pow(_coords.y - _coordt.y, 2));
                     GexfJS.ctxGraphe.strokeStyle = (_isLinked ? _d.C : "rgba(100,100,100,0.2)");
+		    GexfJS.ctxGraphe.lineWidth = Math.min(min_node_radius, _dist*.1, _edgeSizeFactor * _d.W);
                     traceArc(GexfJS.ctxGraphe, _coords, _coordt, _sizeFactor * 3.5, GexfJS.params.showEdgeArrow && _d.d);
                 }
             }
@@ -1031,9 +1092,15 @@
         GexfJS.ctxGraphe.lineWidth = 4;
         GexfJS.ctxGraphe.strokeStyle = "rgba(0,100,0,0.8)";
 
+	if (_centralNode == -1 && typeof GexfJS.graph.root_node !== "undefined") {
+	    _centralNode = GexfJS.graph.root_node;
+	}
         if (_centralNode != -1) {
+	    GexfJS.graph.root_node = i;
             var _dnc = GexfJS.graph.nodeList[_centralNode];
-            _dnc.real_coords = ((GexfJS.params.useLens && GexfJS.mousePosition) ? calcCoord(GexfJS.mousePosition.x, GexfJS.mousePosition.y, _dnc.actual_coords) : _dnc.actual_coords);
+	    if (_dnc) {
+		_dnc.real_coords = ((GexfJS.params.useLens && GexfJS.mousePosition) ? calcCoord(GexfJS.mousePosition.x, GexfJS.mousePosition.y, _dnc.actual_coords) : _dnc.actual_coords);
+	    }
         }
 
         for (var i in GexfJS.graph.nodeList) {
@@ -1077,7 +1144,7 @@
             }
         }
 
-        if (_centralNode != -1) {
+        if (_centralNode != -1 && _dnc) {
             GexfJS.ctxGraphe.fillStyle = _dnc.B;
             GexfJS.ctxGraphe.beginPath();
             GexfJS.ctxGraphe.arc(_dnc.real_coords.x, _dnc.real_coords.y, _dnc.real_coords.r, 0, Math.PI * 2, true);
@@ -1390,5 +1457,7 @@
         console.warn('DEPRECATION WARNING: Please use "GexfJS.setParams" instead of "setParams" in config.js');
         GexfJS.setParams(params);
     }
+
+
 
 })();
