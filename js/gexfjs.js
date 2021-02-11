@@ -706,7 +706,11 @@
         GexfJS.timeRefresh = setInterval(traceMap, 60);
         GexfJS.graph = null;
         loadGraph();
+	// FIXME here we will insert information from the graph description attribute
+	// if GexfJS.graph.description != "" {
+	//     $("#backbutton").prepend(GexfJS.graph.description + " | ");
 
+	// }
     }
 
     function loadGraph() {
@@ -1077,12 +1081,11 @@
                 }
 
                 if ((_isLinked || _showAllEdges) && (_ds.withinFrame || _dt.withinFrame) && _ds.visible && _dt.visible) {
-                    GexfJS.ctxGraphe.lineWidth = Math.min(min_node_radius*.8, _edgeSizeFactor * _d.W);
                     var _coords = ((GexfJS.params.useLens && GexfJS.mousePosition) ? calcCoord(GexfJS.mousePosition.x, GexfJS.mousePosition.y, _ds.actual_coords) : _ds.actual_coords);
                     _coordt = ((GexfJS.params.useLens && GexfJS.mousePosition) ? calcCoord(GexfJS.mousePosition.x, GexfJS.mousePosition.y, _dt.actual_coords) : _dt.actual_coords);
 		    var _dist = Math.sqrt(Math.pow(_coords.x - _coordt.x, 2) + Math.pow(_coords.y - _coordt.y, 2));
                     GexfJS.ctxGraphe.strokeStyle = (_isLinked ? _d.C : "rgba(100,100,100,0.2)");
-		    GexfJS.ctxGraphe.lineWidth = Math.min(min_node_radius, _dist*.1, _edgeSizeFactor * _d.W);
+		    GexfJS.ctxGraphe.lineWidth = Math.min(min_node_radius*.8, _dist*.3, _edgeSizeFactor * _d.W);
                     traceArc(GexfJS.ctxGraphe, _coords, _coordt, _sizeFactor * 3.5, GexfJS.params.showEdgeArrow && _d.d);
                 }
             }
@@ -1209,8 +1212,25 @@
         if (_val != GexfJS.lastAC || _ac.html() == "") {
             GexfJS.lastAC = _val;
             var _n = 0;
-            GexfJS.graph.indexOfLabels.forEach(function (_l, i) {
-                if (_n < 20 && _l.search(_val) != -1) {
+	    var ac_content_array = []
+	    GexfJS.graph.indexOfLabels.forEach(function (_l, i) {
+		var pos = _l.indexOf(_val);
+		if (pos != -1) {
+		    ac_content_array.push([i, _l.length, pos])
+		}
+	    })
+	    ac_content_array.sort(function(a, b) {
+		if (a[1] < b[1]) {
+		    return -1; // shortest first
+		} else if (a[1] > b[1]) {
+		    return 1;
+		} else if (a[2] < b[2]) {
+		    return -1; // leftmost first
+		} else if (a[2] > b[2]) {
+		    return 1;
+		} else { return 0;}
+	    })
+            ac_content_array.slice(0, 20).forEach(function (ac_data) {
                     var closure_n = _n;
                     $('<li>')
                         .attr("id", "liac_" + _n)
@@ -1219,14 +1239,13 @@
                                 changePosAC(closure_n);
                             })
                             .click(function () {
-                                displayNode(i, true);
+                                displayNode(ac_data[0], true);
                                 return false;
                             })
-                            .text(GexfJS.graph.nodeList[i].l)
+                            .text(GexfJS.graph.nodeList[ac_data[0]].l)
                         )
                         .appendTo(_acContent);
                     _n++;
-                }
             });
             GexfJS.graph.indexOfTranslations.forEach(function (_l, i) {
                 if (_n < 20 && _l.search(_val) != -1) {
